@@ -1,0 +1,1670 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MyBox — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:      #07080c;
+  --s1:      #0d0f17;
+  --s2:      #131620;
+  --s3:      #1a1d2a;
+  --border:  #1e2130;
+  --border2: #252838;
+  --accent:  #6c63ff;
+  --accent2: #ff6584;
+  --green:   #2ddc8e;
+  --gold:    #f5c542;
+  --red:     #ff4757;
+  --cyan:    #00d4ff;
+  --text:    #dde1f0;
+  --dim:     #5a607a;
+  --dim2:    #8890aa;
+  --mono:    'DM Mono', monospace;
+  --sans:    'Syne', sans-serif;
+  --sidebar: 64px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  display: flex;
+}
+
+/* ══ SIDEBAR ══════════════════════════════════════════ */
+.sidebar {
+  width: var(--sidebar);
+  height: 100vh;
+  background: var(--s1);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 0;
+  position: fixed;
+  left: 0; top: 0;
+  z-index: 100;
+  gap: 4px;
+}
+
+.sidebar-logo {
+  width: 38px; height: 38px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  box-shadow: 0 4px 16px rgba(108,99,255,0.35);
+  margin-bottom: 16px;
+  flex-shrink: 0;
+}
+
+.sidebar-divider {
+  width: 32px; height: 1px;
+  background: var(--border2);
+  margin: 6px 0;
+}
+
+.nav-btn {
+  width: 44px; height: 44px;
+  border-radius: 12px;
+  border: none;
+  background: transparent;
+  color: var(--dim);
+  font-size: 20px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+  position: relative;
+}
+.nav-btn:hover { background: var(--s3); color: var(--text); }
+.nav-btn.active {
+  background: rgba(108,99,255,0.15);
+  color: var(--accent);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+.nav-btn .tooltip {
+  position: absolute;
+  left: calc(100% + 12px);
+  background: var(--s3);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: 5px 12px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+  z-index: 200;
+}
+.nav-btn:hover .tooltip { opacity: 1; }
+
+/* Bottom user button */
+.sidebar-bottom {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.user-avatar {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--cyan));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+  cursor: pointer;
+  font-family: var(--mono);
+  font-weight: 700;
+  color: #fff;
+  border: 2px solid var(--border2);
+  transition: all 0.2s;
+  position: relative;
+}
+.user-avatar:hover { border-color: var(--accent); }
+.user-avatar .tooltip { left: calc(100% + 12px); }
+
+/* ══ MAIN CONTENT ══════════════════════════════════════ */
+.main {
+  margin-left: var(--sidebar);
+  flex: 1;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Top bar */
+.topbar {
+  height: 52px;
+  background: var(--s1);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.topbar-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+.topbar-subtitle {
+  font-size: 11px;
+  font-family: var(--mono);
+  color: var(--dim);
+}
+.topbar-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--dim);
+}
+.topbar-right a {
+  color: var(--dim);
+  text-decoration: none;
+  padding: 4px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border2);
+  transition: all 0.15s;
+}
+.topbar-right a:hover { color: var(--red); border-color: rgba(255,71,87,0.3); }
+
+/* Content panels */
+.panels {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.panel {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  padding: 28px 28px 40px;
+  display: none;
+  animation: fadeIn 0.2s ease;
+}
+.panel.active { display: block; }
+@keyframes fadeIn { from { opacity:0; transform: translateY(6px); } to { opacity:1; transform:none; } }
+
+.panel::-webkit-scrollbar { width: 5px; }
+.panel::-webkit-scrollbar-track { background: transparent; }
+.panel::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+/* ══ HOME PANEL ════════════════════════════════════════ */
+.home-greeting {
+  margin-bottom: 32px;
+}
+.home-greeting h2 {
+  font-size: 28px;
+  font-weight: 800;
+  background: linear-gradient(135deg, #fff 30%, var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 6px;
+}
+.home-greeting p { font-size: 13px; color: var(--dim2); font-family: var(--mono); }
+
+.tools-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 14px;
+}
+
+.tool-card {
+  background: var(--s2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 22px 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+.tool-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.2s;
+  border-radius: 16px;
+}
+.tool-card:hover { transform: translateY(-2px); border-color: var(--border2); }
+.tool-card:hover::before { opacity: 1; }
+
+.tool-card.c-purple::before { background: radial-gradient(circle at top left, rgba(108,99,255,0.08), transparent 60%); }
+.tool-card.c-pink::before   { background: radial-gradient(circle at top left, rgba(255,101,132,0.08), transparent 60%); }
+.tool-card.c-green::before  { background: radial-gradient(circle at top left, rgba(45,220,142,0.08), transparent 60%); }
+.tool-card.c-gold::before   { background: radial-gradient(circle at top left, rgba(245,197,66,0.08), transparent 60%); }
+.tool-card.c-cyan::before   { background: radial-gradient(circle at top left, rgba(0,212,255,0.08), transparent 60%); }
+
+.tool-icon {
+  font-size: 28px;
+  margin-bottom: 12px;
+  display: block;
+}
+.tool-name {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.tool-desc {
+  font-size: 11px;
+  font-family: var(--mono);
+  color: var(--dim);
+  line-height: 1.5;
+}
+
+/* ══ TOOL PANELS — shared styles ═══════════════════════ */
+.tool-header {
+  margin-bottom: 24px;
+}
+.tool-header h2 {
+  font-size: 22px;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+.tool-header p {
+  font-size: 12px;
+  font-family: var(--mono);
+  color: var(--dim2);
+}
+
+.card {
+  background: var(--s2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 14px;
+}
+.card-title {
+  font-size: 12px;
+  font-family: var(--mono);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--dim);
+  margin-bottom: 12px;
+}
+
+.inp {
+  background: var(--s3);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s;
+  width: 100%;
+}
+.inp:focus { border-color: var(--accent); }
+
+.btn {
+  padding: 9px 18px;
+  border-radius: 9px;
+  border: none;
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: #7d75ff; }
+.btn-green { background: var(--green); color: #000; }
+.btn-green:hover { background: #3feaa0; }
+.btn-ghost { background: var(--s3); color: var(--dim2); border: 1px solid var(--border2); }
+.btn-ghost:hover { color: var(--text); }
+.btn-danger { background: rgba(255,71,87,0.1); color: var(--red); border: 1px solid rgba(255,71,87,0.25); }
+.btn-danger:hover { background: rgba(255,71,87,0.2); }
+
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.col { display: flex; flex-direction: column; gap: 10px; }
+.label { font-size: 11px; font-family: var(--mono); color: var(--dim); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
+
+.result-box {
+  background: var(--s3);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  padding: 14px;
+  font-family: var(--mono);
+  font-size: 13px;
+  word-break: break-all;
+  line-height: 1.6;
+  margin-top: 10px;
+  display: none;
+}
+.result-box.show { display: block; }
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-family: var(--mono);
+}
+.badge-green { background: rgba(45,220,142,0.1); color: var(--green); border: 1px solid rgba(45,220,142,0.2); }
+.badge-red   { background: rgba(255,71,87,0.1);  color: var(--red);   border: 1px solid rgba(255,71,87,0.2); }
+.badge-gold  { background: rgba(245,197,66,0.1); color: var(--gold);  border: 1px solid rgba(245,197,66,0.2); }
+
+/* ══ PASSWORD TOOL ═════════════════════════════════════ */
+.pw-display {
+  background: var(--s3);
+  border: 1px solid var(--border2);
+  border-radius: 12px;
+  padding: 18px 20px;
+  font-family: var(--mono);
+  font-size: 18px;
+  letter-spacing: 2px;
+  color: var(--accent);
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  word-break: break-all;
+  cursor: pointer;
+}
+.pw-display:hover { border-color: var(--accent); }
+.pw-copy-hint { font-size: 11px; color: var(--dim); white-space: nowrap; }
+
+.pw-strength {
+  height: 5px;
+  border-radius: 10px;
+  background: var(--border2);
+  margin: 10px 0;
+  overflow: hidden;
+}
+.pw-strength-bar {
+  height: 100%;
+  border-radius: 10px;
+  transition: all 0.4s;
+}
+
+.range-row { display: flex; align-items: center; gap: 12px; }
+input[type=range] {
+  flex: 1;
+  -webkit-appearance: none;
+  height: 4px;
+  background: var(--border2);
+  border-radius: 10px;
+  outline: none;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  box-shadow: 0 0 8px rgba(108,99,255,0.4);
+}
+.range-val {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--accent);
+  min-width: 28px;
+  text-align: right;
+}
+
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+.check-row:last-child { border-bottom: none; }
+.check-row input { accent-color: var(--accent); width: 16px; height: 16px; cursor: pointer; }
+.check-label { font-size: 13px; flex: 1; }
+.check-chars { font-family: var(--mono); font-size: 11px; color: var(--dim); }
+
+/* ══ IMAGE TOOL ════════════════════════════════════════ */
+.drop-zone {
+  border: 2px dashed var(--border2);
+  border-radius: 14px;
+  padding: 40px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--s3);
+}
+.drop-zone:hover, .drop-zone.drag-over {
+  border-color: var(--accent);
+  background: rgba(108,99,255,0.05);
+}
+.drop-zone .dz-icon { font-size: 36px; margin-bottom: 10px; }
+.drop-zone .dz-text { font-size: 13px; color: var(--dim2); font-family: var(--mono); }
+.drop-zone .dz-hint { font-size: 11px; color: var(--dim); margin-top: 4px; }
+
+.img-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+.img-thumb {
+  background: var(--s3);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+}
+.img-thumb img {
+  width: 100%;
+  height: 90px;
+  object-fit: cover;
+  display: block;
+}
+.img-thumb-name {
+  font-size: 10px;
+  font-family: var(--mono);
+  color: var(--dim);
+  padding: 5px 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.img-remove {
+  position: absolute;
+  top: 4px; right: 4px;
+  width: 20px; height: 20px;
+  background: rgba(255,71,87,0.8);
+  border: none;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.img-thumb:hover .img-remove { opacity: 1; }
+
+.fmt-pills { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
+.fmt-pill {
+  padding: 5px 16px;
+  border-radius: 20px;
+  font-family: var(--mono);
+  font-size: 12px;
+  border: 1px solid var(--border2);
+  background: var(--s3);
+  color: var(--dim2);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.fmt-pill.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+/* ══ PDF TOOL ══════════════════════════════════════════ */
+.pdf-file-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.pdf-file-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--s3);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+.pdf-file-icon { font-size: 20px; flex-shrink: 0; }
+.pdf-file-name { flex: 1; font-size: 13px; font-family: var(--mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pdf-file-size { font-size: 11px; color: var(--dim); font-family: var(--mono); }
+
+/* ══ PORT TOOL ═════════════════════════════════════════ */
+.port-list { display: flex; flex-direction: column; gap: 6px; }
+.port-row {
+  display: grid;
+  grid-template-columns: 80px 1fr 100px auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 14px;
+  background: var(--s3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  transition: border-color 0.15s;
+}
+.port-row:hover { border-color: var(--border2); }
+.port-num { font-family: var(--mono); font-size: 14px; color: var(--text); font-weight: 500; }
+.port-svc { font-size: 12px; color: var(--dim2); font-family: var(--mono); }
+
+/* ══ CMD OUTPUT ════════════════════════════════════════ */
+.cmd-out {
+  background: #050709;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--dim2);
+  max-height: 200px;
+  overflow-y: auto;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.cmd-out .ok   { color: var(--green); }
+.cmd-out .warn { color: var(--gold); }
+.cmd-out .err  { color: var(--red); }
+.cmd-out .info { color: var(--cyan); }
+
+/* ══ TOAST ══════════════════════════════════════════════ */
+#toast {
+  position: fixed;
+  bottom: 24px; right: 24px;
+  background: var(--s2);
+  border: 1px solid var(--border2);
+  border-radius: 12px;
+  padding: 12px 18px;
+  font-family: var(--mono);
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.3s;
+  z-index: 999;
+  pointer-events: none;
+}
+#toast.show { opacity: 1; transform: translateY(0); }
+
+/* ══ READER ════════════════════════════════════════════ */
+.reader-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--s3);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-decoration: none;
+  color: var(--text);
+}
+.reader-btn:hover { border-color: var(--accent); background: rgba(108,99,255,0.06); }
+.reader-btn-icon { font-size: 20px; flex-shrink: 0; }
+.reader-btn-info { flex: 1; }
+.reader-btn-name { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+.reader-btn-desc { font-size: 11px; font-family: var(--mono); color: var(--dim); }
+.reader-btn-arrow { color: var(--dim); font-size: 14px; }
+
+/* Scrollbar global */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+@media (max-width: 600px) {
+  .tools-grid { grid-template-columns: 1fr 1fr; }
+  .port-row { grid-template-columns: 60px 1fr auto; }
+  .port-svc { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══ SIDEBAR ══════════════════════════════════════════ -->
+<nav class="sidebar">
+  <div class="sidebar-logo">⬡</div>
+
+  <button class="nav-btn active" onclick="showPanel('home', this)" title="Home">
+    🏠<span class="tooltip">Home</span>
+  </button>
+
+  <div class="sidebar-divider"></div>
+
+  <button class="nav-btn" onclick="showPanel('downloader', this)">
+    ⬇<span class="tooltip">DropLoad</span>
+  </button>
+  <button class="nav-btn" onclick="showPanel('images', this)">
+    🖼<span class="tooltip">Imagens</span>
+  </button>
+  <button class="nav-btn" onclick="showPanel('pdf', this)">
+    📄<span class="tooltip">PDF</span>
+  </button>
+  <button class="nav-btn" onclick="showPanel('passwords', this)">
+    🔐<span class="tooltip">Passwords</span>
+  </button>
+  <button class="nav-btn" onclick="showPanel('ports', this)">
+    🔌<span class="tooltip">Portas</span>
+  </button>
+  <button class="nav-btn" onclick="showPanel('reader', this)">
+    📰<span class="tooltip">Leitor</span>
+  </button>
+
+  <div class="sidebar-bottom">
+    <div class="sidebar-divider"></div>
+    <div class="user-avatar" onclick="showPanel('home', null)" title="__USERNAME__">
+      __INITIAL__
+      <span class="tooltip">__USERNAME__</span>
+    </div>
+  </div>
+</nav>
+
+<!-- ══ MAIN ══════════════════════════════════════════════ -->
+<div class="main">
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <span class="topbar-title" id="topbar-title">Home</span>
+    <span class="topbar-subtitle" id="topbar-sub">MyBox</span>
+    <div class="topbar-right">
+      <span>👤 __USERNAME__</span>
+      <a href="/logout">Sair</a>
+    </div>
+  </div>
+
+  <div class="panels">
+
+    <!-- ══ HOME ══ -->
+    <div class="panel active" id="panel-home">
+      <div class="home-greeting">
+        <h2>Olá, __USERNAME__! 👋</h2>
+        <p>// o teu espaço pessoal — tudo o que precisas numa página</p>
+      </div>
+      <div class="tools-grid">
+        <div class="tool-card c-purple" onclick="showPanel('downloader', null)">
+          <span class="tool-icon">⬇</span>
+          <div class="tool-name">DropLoad</div>
+          <div class="tool-desc">Download vídeo & áudio do YouTube, Instagram, Facebook e +1000 sites</div>
+        </div>
+        <div class="tool-card c-pink" onclick="showPanel('images', null)">
+          <span class="tool-icon">🖼</span>
+          <div class="tool-name">Imagens</div>
+          <div class="tool-desc">Converte, redimensiona e comprime imagens JPG, PNG, WebP</div>
+        </div>
+        <div class="tool-card c-green" onclick="showPanel('pdf', null)">
+          <span class="tool-icon">📄</span>
+          <div class="tool-name">PDF Tools</div>
+          <div class="tool-desc">Junta, separa, comprime e converte PDFs sem sair da página</div>
+        </div>
+        <div class="tool-card c-gold" onclick="showPanel('passwords', null)">
+          <span class="tool-icon">🔐</span>
+          <div class="tool-name">Passwords</div>
+          <div class="tool-desc">Gera passwords seguras com controlo total sobre o formato</div>
+        </div>
+        <div class="tool-card c-cyan" onclick="showPanel('ports', null)">
+          <span class="tool-icon">🔌</span>
+          <div class="tool-name">Portas</div>
+          <div class="tool-desc">Gere portas Windows, liberta processos bloqueados e configura o Firewall</div>
+        </div>
+        <div class="tool-card" style="--c:rgba(45,212,255,0.08)" onclick="showPanel('reader', null)"
+          onmouseenter="this.style.setProperty('--hover','1')" >
+          <span class="tool-icon">📰</span>
+          <div class="tool-name">Leitor</div>
+          <div class="tool-desc">Lê artigos sem distrações — bypassa paywalls via arquivos públicos</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ DOWNLOADER ══ -->
+    <div class="panel" id="panel-downloader">
+      <div class="tool-header">
+        <h2>⬇ DropLoad</h2>
+        <p>Download vídeo & áudio — YouTube, Instagram, Facebook, TikTok e +1000 sites</p>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Cole o link</div>
+        <div class="row">
+          <input class="inp" id="dl-url" type="url" placeholder="https://www.youtube.com/watch?v=..." style="flex:1">
+          <button class="btn btn-primary" onclick="dlFetch()">Analisar</button>
+        </div>
+        <div style="font-size:11px;color:var(--dim);font-family:var(--mono);margin-top:8px">
+          Suporta YouTube, Instagram, Facebook, TikTok, Twitter/X e +1000 sites
+        </div>
+        <div id="dl-error" style="display:none;margin-top:10px;padding:10px 14px;background:rgba(255,71,87,.08);border:1px solid rgba(255,71,87,.3);border-radius:8px;font-family:var(--mono);font-size:12px;color:var(--red)"></div>
+      </div>
+
+      <!-- Preview -->
+      <div id="dl-preview" style="display:none">
+        <div class="card">
+          <div style="display:flex;gap:16px;align-items:flex-start">
+            <img id="dl-thumb" src="" style="width:120px;height:75px;object-fit:cover;border-radius:8px;background:var(--s3);flex-shrink:0">
+            <div style="flex:1;min-width:0">
+              <div id="dl-title" style="font-size:14px;font-weight:700;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <span class="badge badge-gold" id="dl-platform"></span>
+                <span class="badge badge-green" id="dl-duration"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Formato</div>
+          <div class="fmt-pills" id="dl-tabs">
+            <span class="fmt-pill active" onclick="dlFilter('compat',this)">⚡ Rápido</span>
+            <span class="fmt-pill" onclick="dlFilter('quality',this)">🎬 Alta Qualidade</span>
+            <span class="fmt-pill" onclick="dlFilter('audio',this)">🎵 Áudio</span>
+            <span class="fmt-pill" onclick="dlFilter('mp3',this)">🎤 MP3</span>
+          </div>
+          <div id="dl-mode-desc" style="font-size:11px;font-family:var(--mono);color:var(--green);padding:4px 0 10px"></div>
+          <div class="img-preview-grid" id="dl-formats" style="grid-template-columns:repeat(auto-fill,minmax(130px,1fr))"></div>
+          <button class="btn btn-green" id="dl-btn" onclick="dlStart()" disabled style="width:100%;margin-top:14px;padding:13px">⬇ Descarregar</button>
+        </div>
+      </div>
+
+      <!-- Progress -->
+      <div class="card" id="dl-progress" style="display:none;text-align:center">
+        <div style="font-weight:700;margin-bottom:14px" id="dl-prog-title">⏳ A descarregar...</div>
+        <div style="background:var(--s3);border-radius:100px;height:8px;overflow:hidden;margin-bottom:10px">
+          <div id="dl-prog-bar" style="height:100%;border-radius:100px;background:linear-gradient(90deg,var(--accent),var(--green));transition:width .4s;width:0%"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--dim)">
+          <span id="dl-prog-pct">0%</span>
+          <span id="dl-prog-speed"></span>
+          <span id="dl-prog-eta"></span>
+        </div>
+        <div id="dl-prog-status" style="margin-top:10px;font-family:var(--mono);font-size:12px;color:var(--accent)"></div>
+      </div>
+
+      <!-- Result -->
+      <div class="card" id="dl-result" style="display:none;text-align:center">
+        <div style="font-size:40px;margin-bottom:8px">✅</div>
+        <div style="font-size:16px;font-weight:800;margin-bottom:6px">Download completo!</div>
+        <div id="dl-result-name" style="font-size:12px;color:var(--dim);font-family:var(--mono);margin-bottom:18px"></div>
+        <a id="dl-result-link" href="#" class="btn btn-green" style="display:inline-flex;gap:8px;text-decoration:none">⬇ Guardar ficheiro</a>
+        <br><span style="font-size:12px;color:var(--dim);font-family:var(--mono);cursor:pointer;margin-top:12px;display:inline-block" onclick="dlReset()">← Novo download</span>
+      </div>
+    </div>
+
+    <!-- ══ IMAGES ══ -->
+    <div class="panel" id="panel-images">
+      <div class="tool-header">
+        <h2>🖼 Conversor de Imagens</h2>
+        <p>Converte e redimensiona imagens diretamente no browser — sem upload para servidores externos</p>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Seleciona imagens</div>
+        <div class="drop-zone" id="img-drop" onclick="document.getElementById('img-input').click()">
+          <div class="dz-icon">🖼</div>
+          <div class="dz-text">Clica ou arrasta imagens aqui</div>
+          <div class="dz-hint">JPG, PNG, WebP, GIF, BMP — múltiplos ficheiros</div>
+        </div>
+        <input type="file" id="img-input" accept="image/*" multiple style="display:none" onchange="imgAdd(this.files)">
+        <div class="img-preview-grid" id="img-thumbs"></div>
+      </div>
+
+      <div class="card" id="img-options" style="display:none">
+        <div class="card-title">Opções de conversão</div>
+        <div class="row" style="margin-bottom:14px">
+          <div style="flex:1">
+            <div class="label">Formato de saída</div>
+            <div class="fmt-pills">
+              <span class="fmt-pill active" onclick="imgSetFmt('jpeg',this)">JPEG</span>
+              <span class="fmt-pill" onclick="imgSetFmt('png',this)">PNG</span>
+              <span class="fmt-pill" onclick="imgSetFmt('webp',this)">WebP</span>
+            </div>
+          </div>
+        </div>
+        <div class="row" style="margin-bottom:14px">
+          <div style="flex:1">
+            <div class="label">Qualidade: <span id="img-qual-val" style="color:var(--accent)">85%</span></div>
+            <div class="range-row">
+              <input type="range" id="img-quality" min="10" max="100" value="85"
+                oninput="document.getElementById('img-qual-val').textContent=this.value+'%'">
+            </div>
+          </div>
+        </div>
+        <div class="row" style="margin-bottom:14px">
+          <div style="flex:1">
+            <div class="label">Redimensionar (opcional)</div>
+            <div class="row">
+              <input class="inp" id="img-width" type="number" placeholder="Largura px" style="flex:1">
+              <span style="color:var(--dim)">×</span>
+              <input class="inp" id="img-height" type="number" placeholder="Altura px" style="flex:1">
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-green" onclick="imgConvert()" style="width:100%;padding:12px">🔄 Converter e Descarregar</button>
+      </div>
+
+      <canvas id="img-canvas" style="display:none"></canvas>
+    </div>
+
+    <!-- ══ PDF ══ -->
+    <div class="panel" id="panel-pdf">
+      <div class="tool-header">
+        <h2>📄 PDF Tools</h2>
+        <p>Ferramentas para gerir PDFs — usa o servidor para processamento</p>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Juntar PDFs</div>
+        <p style="font-size:12px;color:var(--dim2);font-family:var(--mono);margin-bottom:12px">
+          Seleciona vários PDFs — serão unidos pela ordem que os adicionas
+        </p>
+        <div class="drop-zone" id="pdf-drop" onclick="document.getElementById('pdf-input').click()">
+          <div class="dz-icon">📄</div>
+          <div class="dz-text">Clica ou arrasta PDFs aqui</div>
+          <div class="dz-hint">Podes adicionar múltiplos ficheiros</div>
+        </div>
+        <input type="file" id="pdf-input" accept=".pdf" multiple style="display:none" onchange="pdfAdd(this.files)">
+        <div class="pdf-file-list" id="pdf-list"></div>
+        <div class="row" style="margin-top:12px">
+          <button class="btn btn-green" onclick="pdfMerge()" id="pdf-merge-btn" disabled style="flex:1;padding:12px">📎 Juntar PDFs</button>
+          <button class="btn btn-ghost" onclick="pdfClear()">Limpar</button>
+        </div>
+        <div id="pdf-result" style="display:none;margin-top:12px;text-align:center">
+          <a id="pdf-dl-link" href="#" class="btn btn-green" style="display:inline-flex;gap:8px;text-decoration:none">⬇ Descarregar PDF Unido</a>
+        </div>
+        <div id="pdf-error" style="display:none;margin-top:10px;padding:10px 14px;background:rgba(255,71,87,.08);border:1px solid rgba(255,71,87,.3);border-radius:8px;font-family:var(--mono);font-size:12px;color:var(--red)"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Outras ferramentas PDF</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div style="background:var(--s3);border:1px solid var(--border2);border-radius:10px;padding:14px;text-align:center;opacity:.5">
+            <div style="font-size:22px;margin-bottom:6px">✂️</div>
+            <div style="font-size:12px;font-weight:700">Separar PDF</div>
+            <div style="font-size:11px;color:var(--dim);font-family:var(--mono);margin-top:3px">Em breve</div>
+          </div>
+          <div style="background:var(--s3);border:1px solid var(--border2);border-radius:10px;padding:14px;text-align:center;opacity:.5">
+            <div style="font-size:22px;margin-bottom:6px">🗜</div>
+            <div style="font-size:12px;font-weight:700">Comprimir PDF</div>
+            <div style="font-size:11px;color:var(--dim);font-family:var(--mono);margin-top:3px">Em breve</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PASSWORDS ══ -->
+    <div class="panel" id="panel-passwords">
+      <div class="tool-header">
+        <h2>🔐 Gerador de Passwords</h2>
+        <p>Gera passwords seguras — processado localmente, nunca sai do browser</p>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Password gerada</div>
+        <div class="pw-display" id="pw-display" onclick="pwCopy()" title="Clica para copiar">
+          <span id="pw-text">Carrega em Gerar</span>
+          <span class="pw-copy-hint">clica para copiar</span>
+        </div>
+        <div class="pw-strength">
+          <div class="pw-strength-bar" id="pw-strength-bar" style="width:0%;background:var(--dim)"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span id="pw-strength-label" style="font-size:11px;font-family:var(--mono);color:var(--dim)">—</span>
+          <span id="pw-entropy" style="font-size:11px;font-family:var(--mono);color:var(--dim)"></span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Configuração</div>
+
+        <div class="label" style="margin-bottom:8px">Comprimento</div>
+        <div class="range-row" style="margin-bottom:16px">
+          <input type="range" id="pw-len" min="8" max="64" value="20" oninput="pwGen()">
+          <span class="range-val" id="pw-len-val">20</span>
+        </div>
+
+        <div class="label" style="margin-bottom:4px">Caracteres incluídos</div>
+        <label class="check-row">
+          <input type="checkbox" id="pw-upper" checked onchange="pwGen()">
+          <span class="check-label">Maiúsculas</span>
+          <span class="check-chars">A-Z</span>
+        </label>
+        <label class="check-row">
+          <input type="checkbox" id="pw-lower" checked onchange="pwGen()">
+          <span class="check-label">Minúsculas</span>
+          <span class="check-chars">a-z</span>
+        </label>
+        <label class="check-row">
+          <input type="checkbox" id="pw-nums" checked onchange="pwGen()">
+          <span class="check-label">Números</span>
+          <span class="check-chars">0-9</span>
+        </label>
+        <label class="check-row">
+          <input type="checkbox" id="pw-sym" checked onchange="pwGen()">
+          <span class="check-label">Símbolos</span>
+          <span class="check-chars">!@#$%^&*()</span>
+        </label>
+        <label class="check-row">
+          <input type="checkbox" id="pw-noambig" onchange="pwGen()">
+          <span class="check-label">Excluir caracteres ambíguos</span>
+          <span class="check-chars">0O1lI</span>
+        </label>
+
+        <div style="margin-top:16px">
+          <div class="label" style="margin-bottom:8px">Quantidade</div>
+          <div class="range-row">
+            <input type="range" id="pw-count" min="1" max="10" value="1" oninput="pwGenMulti()">
+            <span class="range-val" id="pw-count-val">1</span>
+          </div>
+        </div>
+
+        <div id="pw-multi" style="display:none;margin-top:12px" class="result-box show"></div>
+
+        <button class="btn btn-primary" onclick="pwGen()" style="width:100%;padding:12px;margin-top:14px">🔄 Gerar Nova</button>
+      </div>
+    </div>
+
+    <!-- ══ PORTS ══ -->
+    <div class="panel" id="panel-ports">
+      <div class="tool-header">
+        <h2>🔌 Gestor de Portas</h2>
+        <p>Verifica, liberta e gere portas Windows — comandos prontos a executar</p>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Pesquisar porta</div>
+        <div class="row">
+          <input class="inp" id="port-num" type="number" placeholder="ex: 8080" min="1" max="65535" style="flex:1">
+          <button class="btn btn-primary" onclick="portCheck()">Verificar</button>
+          <button class="btn btn-ghost" onclick="portKill()">🔓 Libertar</button>
+        </div>
+        <div class="cmd-out" id="port-out" style="margin-top:12px;display:none"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Ações rápidas</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px">
+          <button class="btn btn-ghost" style="padding:12px;text-align:left" onclick="portCmd('netstat -ano | findstr LISTENING','Portas LISTENING')">📡 Ver LISTENING</button>
+          <button class="btn btn-ghost" style="padding:12px;text-align:left" onclick="portCmd('mode','Portas COM')">🔌 Portas COM</button>
+          <button class="btn btn-ghost" style="padding:12px;text-align:left" onclick="portCmd('ipconfig /flushdns','Flush DNS')">🔄 Flush DNS</button>
+          <button class="btn btn-ghost" style="padding:12px;text-align:left" onclick="portCmd('ipconfig /all','Info de rede')">🌐 Info Rede</button>
+          <button class="btn btn-ghost" style="padding:12px;text-align:left" onclick="portFirewall()">🛡 Abrir Firewall</button>
+          <button class="btn btn-danger" style="padding:12px;text-align:left" onclick="portCmd('netsh winsock reset','Reset Winsock ⚠ Reinicia PC!')">🔧 Reset Winsock</button>
+        </div>
+        <div class="cmd-out" id="port-cmd-out" style="margin-top:12px;display:none"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Firewall — abrir porta</div>
+        <div class="row">
+          <input class="inp" id="fw-port" type="number" placeholder="Porta" style="width:100px;flex:none">
+          <select class="inp" id="fw-proto" style="width:90px;flex:none">
+            <option>TCP</option><option>UDP</option>
+          </select>
+          <input class="inp" id="fw-name" placeholder="Nome da regra" style="flex:1">
+          <button class="btn btn-green" onclick="fwAllow()">✅ Abrir</button>
+          <button class="btn btn-danger" onclick="fwBlock()">❌ Bloquear</button>
+        </div>
+        <div class="cmd-out" id="fw-out" style="margin-top:12px;display:none"></div>
+      </div>
+    </div>
+
+    <!-- ══ READER ══ -->
+    <div class="panel" id="panel-reader">
+      <div class="tool-header">
+        <h2>📰 Leitor de Artigos</h2>
+        <p>Modo leitura limpa — extrai só o conteúdo do artigo, sem anúncios nem popups</p>
+      </div>
+
+      <div class="card">
+        <div class="card-title">URL do artigo</div>
+        <div class="row">
+          <input class="inp" id="reader-url" type="url" placeholder="https://www.publico.pt/..." style="flex:1">
+          <button class="btn btn-primary" id="reader-btn" onclick="readerFetch()">📖 Ler</button>
+        </div>
+        <div style="margin-top:8px;font-size:11px;font-family:var(--mono);color:var(--dim)">
+          Usa o mesmo motor do Firefox — extrai texto, imagens e estrutura do artigo
+        </div>
+      </div>
+
+      <!-- Artigo em modo leitura -->
+      <div id="reader-article-card" style="display:none">
+        <!-- Toolbar -->
+        <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--s2);border:1px solid var(--border);border-radius:14px 14px 0 0;flex-wrap:wrap">
+          <div style="flex:1;min-width:0">
+            <div id="reader-art-title" style="font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
+            <div id="reader-art-meta" style="font-size:11px;font-family:var(--mono);color:var(--dim);margin-top:2px"></div>
+          </div>
+          <div style="display:flex;gap:8px;flex-shrink:0">
+            <button class="btn btn-ghost" style="padding:5px 12px;font-size:12px" onclick="readerFontSize(-1)">A-</button>
+            <button class="btn btn-ghost" style="padding:5px 12px;font-size:12px" onclick="readerFontSize(1)">A+</button>
+            <button class="btn btn-ghost" style="padding:5px 12px;font-size:12px" onclick="readerToggleTheme()">🌓</button>
+            <a id="reader-orig-link" href="#" target="_blank" class="btn btn-ghost" style="padding:5px 12px;font-size:12px;text-decoration:none">↗ Original</a>
+            <button class="btn btn-ghost" style="padding:5px 12px;font-size:12px" onclick="readerClose()">✕</button>
+          </div>
+        </div>
+        <!-- Conteúdo -->
+        <div id="reader-article" style="background:var(--reader-bg,#fafaf8);border:1px solid var(--border);border-top:none;border-radius:0 0 14px 14px;padding:40px;max-height:72vh;overflow-y:auto"></div>
+      </div>
+
+      <!-- Loading -->
+      <div class="card" id="reader-loading" style="display:none;text-align:center;padding:40px">
+        <div style="font-size:32px;margin-bottom:12px;animation:spin 1s linear infinite;display:inline-block">⏳</div>
+        <div style="font-family:var(--mono);color:var(--dim)">A buscar e processar artigo...</div>
+      </div>
+
+      <!-- Erro / fallback -->
+      <div class="card" id="reader-error" style="display:none">
+        <div style="color:var(--gold);font-weight:700;margin-bottom:10px">⚠ Não foi possível extrair o artigo</div>
+        <div id="reader-error-msg" style="font-size:12px;font-family:var(--mono);color:var(--dim2);margin-bottom:16px"></div>
+        <div class="card-title">Tenta abrir diretamente com:</div>
+        <div style="display:flex;flex-direction:column;gap:8px" id="reader-fallback-btns"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">💡 Como funciona</div>
+        <div style="font-size:12px;font-family:var(--mono);color:var(--dim2);line-height:1.8">
+          O servidor busca a página completa e usa o <strong style="color:var(--text)">Mozilla Readability</strong> para extrair só o conteúdo do artigo — o mesmo motor que o Firefox usa no modo leitura.<br><br>
+          Funciona bem quando o site carrega o artigo no HTML (muitos fazem isso mesmo com paywall).<br>
+          Se o conteúdo estiver mesmo bloqueado, aparecem links alternativos como o Archive.today.
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /panels -->
+</div><!-- /main -->
+
+<div id="toast"><span id="toast-icon">✓</span><span id="toast-msg">Copiado!</span></div>
+
+<script>
+// ══ NAV ══════════════════════════════════════════════════
+const TITLES = {
+  home:'Home', downloader:'DropLoad', images:'Imagens',
+  pdf:'PDF Tools', passwords:'Passwords', ports:'Portas', reader:'Leitor'
+};
+const SUBS = {
+  home:'MyBox Dashboard', downloader:'Download vídeo & áudio',
+  images:'Conversor de imagens', pdf:'Ferramentas PDF',
+  passwords:'Gerador de passwords', ports:'Gestor de portas',
+  reader:'Leitura sem distrações'
+};
+
+function showPanel(id, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  if (btn) btn.classList.add('active');
+  else {
+    document.querySelectorAll('.nav-btn').forEach(b => {
+      if (b.getAttribute('onclick')?.includes(id)) b.classList.add('active');
+    });
+  }
+  document.getElementById('topbar-title').textContent = TITLES[id] || id;
+  document.getElementById('topbar-sub').textContent   = SUBS[id] || '';
+}
+
+// ══ TOAST ════════════════════════════════════════════════
+function toast(msg, icon='✓') {
+  document.getElementById('toast-msg').textContent = msg;
+  document.getElementById('toast-icon').textContent = icon;
+  const el = document.getElementById('toast');
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2600);
+}
+
+function copyText(text, label='Copiado!') {
+  navigator.clipboard.writeText(text).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+  });
+  toast(label, '📋');
+}
+
+// ══ DOWNLOADER ═══════════════════════════════════════════
+let dlFormats = [], dlSelected = null, dlFilter_ = 'compat', dlPollTimer = null;
+const DL_MODES = {
+  compat:  '✅ Funciona em Windows Media Player, iPhone, SmartTV',
+  quality: '🎬 Melhor resolução. Recomenda VLC para reproduzir.',
+  audio:   '🎵 Só áudio — funciona em qualquer leitor de música',
+  mp3:     '🎤 MP3 320kbps — universal',
+};
+
+async function dlFetch() {
+  const url = document.getElementById('dl-url').value.trim();
+  if (!url) return;
+  document.getElementById('dl-error').style.display = 'none';
+  document.getElementById('dl-preview').style.display = 'none';
+  document.getElementById('dl-progress').style.display = 'none';
+  document.getElementById('dl-result').style.display = 'none';
+  const btn = document.querySelector('#panel-downloader .btn-primary');
+  btn.textContent = '...'; btn.disabled = true;
+  try {
+    const r = await fetch('/api/info', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url})});
+    const d = await r.json();
+    if (d.error) { showDlError(d.error); return; }
+    dlFormats = d.formats || [];
+    document.getElementById('dl-thumb').src = d.thumbnail || '';
+    document.getElementById('dl-title').textContent = d.title || '';
+    document.getElementById('dl-platform').textContent = d.platform || '';
+    document.getElementById('dl-duration').textContent = d.duration || '';
+    dlFilter('compat', document.querySelector('#dl-tabs .fmt-pill'));
+    document.getElementById('dl-preview').style.display = 'block';
+  } catch(e) { showDlError('Servidor não disponível.'); }
+  finally { btn.textContent = 'Analisar'; btn.disabled = false; }
+}
+
+function showDlError(msg) {
+  const el = document.getElementById('dl-error');
+  el.textContent = '⚠ ' + msg; el.style.display = 'block';
+}
+
+function dlFilter(type, tabEl) {
+  dlFilter_ = type; dlSelected = null;
+  document.getElementById('dl-btn').disabled = true;
+  document.querySelectorAll('#dl-tabs .fmt-pill').forEach(p => p.classList.remove('active'));
+  if (tabEl) tabEl.classList.add('active');
+  document.getElementById('dl-mode-desc').textContent = DL_MODES[type] || '';
+
+  const grid = document.getElementById('dl-formats');
+  let fmts = [];
+  if (type === 'mp3') {
+    grid.innerHTML = `<div class="img-thumb" style="background:var(--s3);border:2px solid var(--border2);border-radius:10px;padding:14px;cursor:pointer;display:flex;flex-direction:column;gap:4px" onclick="dlSelect(this,'mp3','mp3','false')">
+      <div style="font-size:13px;font-weight:700">MP3 320kbps</div>
+      <div style="font-size:11px;font-family:var(--mono);color:var(--dim)">Universal</div>
+    </div>`; return;
+  }
+  if (type === 'compat') fmts = dlFormats.filter(f => f.type==='video' && !f.needs_convert);
+  if (type === 'quality') fmts = dlFormats.filter(f => f.type==='video');
+  if (type === 'audio') fmts = dlFormats.filter(f => f.type==='audio' && f.id!=='mp3');
+  if (!fmts.length && type === 'compat') fmts = dlFormats.filter(f => f.type==='video');
+
+  grid.innerHTML = fmts.map(f => `
+    <div style="background:var(--s3);border:2px solid var(--border2);border-radius:10px;padding:12px;cursor:pointer;transition:all .15s"
+      onclick="dlSelect(this,'${f.id}','${f.ext}','${f.needs_convert||false}')">
+      <div style="font-size:13px;font-weight:700">${f.height ? f.height+'p' : f.label}</div>
+      <div style="font-size:11px;font-family:var(--mono);color:var(--dim)">${f.size}</div>
+    </div>`).join('');
+}
+
+function dlSelect(el, id, ext, nc) {
+  document.querySelectorAll('#dl-formats > div').forEach(d => d.style.borderColor = 'var(--border2)');
+  el.style.borderColor = 'var(--accent)';
+  dlSelected = {id, ext, needs_convert: nc==='true'};
+  document.getElementById('dl-btn').disabled = false;
+}
+
+async function dlStart() {
+  if (!dlSelected) return;
+  document.getElementById('dl-preview').style.display = 'none';
+  document.getElementById('dl-progress').style.display = 'block';
+  document.getElementById('dl-prog-bar').style.width = '0%';
+  document.getElementById('dl-prog-pct').textContent = '0%';
+  document.getElementById('dl-prog-status').textContent = 'A iniciar...';
+  try {
+    const r = await fetch('/api/download', {method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({url:document.getElementById('dl-url').value.trim(),
+        format_id:dlSelected.id, ext:dlSelected.ext, needs_convert:dlSelected.needs_convert})});
+    const d = await r.json();
+    if (d.error) { document.getElementById('dl-progress').style.display='none'; showDlError(d.error); document.getElementById('dl-preview').style.display='block'; return; }
+    dlPoll(d.job_id);
+  } catch(e) { showDlError('Erro.'); }
+}
+
+function dlPoll(jobId) {
+  dlPollTimer = setInterval(async () => {
+    const r = await fetch('/api/status/'+jobId);
+    const j = await r.json();
+    document.getElementById('dl-prog-bar').style.width = j.progress+'%';
+    document.getElementById('dl-prog-pct').textContent = Math.round(j.progress)+'%';
+    document.getElementById('dl-prog-speed').textContent = j.speed||'';
+    document.getElementById('dl-prog-eta').textContent = j.eta ? 'ETA: '+j.eta : '';
+    document.getElementById('dl-prog-status').textContent = j.status||'';
+    if (j.status==='pronto') {
+      clearInterval(dlPollTimer);
+      document.getElementById('dl-progress').style.display = 'none';
+      const name = (j.filename||'').split('_').slice(1).join('_');
+      document.getElementById('dl-result-name').textContent = name;
+      document.getElementById('dl-result-link').href = '/api/file/'+jobId;
+      document.getElementById('dl-result').style.display = 'block';
+    }
+    if (j.status==='erro') {
+      clearInterval(dlPollTimer);
+      document.getElementById('dl-progress').style.display = 'none';
+      showDlError(j.error||'Erro no download.');
+      document.getElementById('dl-preview').style.display = 'block';
+    }
+  }, 800);
+}
+
+function dlReset() {
+  document.getElementById('dl-result').style.display = 'none';
+  document.getElementById('dl-url').value = '';
+  dlFormats = []; dlSelected = null;
+}
+
+document.getElementById('dl-url').addEventListener('keydown', e => { if(e.key==='Enter') dlFetch(); });
+document.getElementById('dl-url').addEventListener('paste', e => {
+  setTimeout(() => { if(document.getElementById('dl-url').value.startsWith('http')) dlFetch(); }, 100);
+});
+
+// ══ IMAGES (processamento no browser) ═══════════════════
+let imgFiles = [], imgFmt = 'jpeg';
+
+function imgSetFmt(fmt, el) {
+  imgFmt = fmt;
+  document.querySelectorAll('#panel-images .fmt-pill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function imgAdd(files) {
+  for (const f of files) {
+    if (!f.type.startsWith('image/')) continue;
+    imgFiles.push(f);
+  }
+  imgRender();
+  document.getElementById('img-options').style.display = imgFiles.length ? 'block' : 'none';
+}
+
+function imgRender() {
+  const grid = document.getElementById('img-thumbs');
+  grid.innerHTML = imgFiles.map((f,i) => {
+    const url = URL.createObjectURL(f);
+    return `<div class="img-thumb">
+      <img src="${url}" alt="${f.name}">
+      <div class="img-thumb-name">${f.name}</div>
+      <button class="img-remove" onclick="imgRemove(${i})">×</button>
+    </div>`;
+  }).join('');
+}
+
+function imgRemove(i) {
+  imgFiles.splice(i,1); imgRender();
+  document.getElementById('img-options').style.display = imgFiles.length ? 'block' : 'none';
+}
+
+async function imgConvert() {
+  if (!imgFiles.length) return;
+  const canvas = document.getElementById('img-canvas');
+  const ctx = canvas.getContext('2d');
+  const quality = parseInt(document.getElementById('img-quality').value) / 100;
+  const tw = parseInt(document.getElementById('img-width').value) || 0;
+  const th = parseInt(document.getElementById('img-height').value) || 0;
+  const mime = imgFmt === 'jpeg' ? 'image/jpeg' : imgFmt === 'png' ? 'image/png' : 'image/webp';
+  const ext  = imgFmt === 'jpeg' ? 'jpg' : imgFmt;
+
+  for (const f of imgFiles) {
+    const img = await new Promise(res => {
+      const i = new Image(); i.onload = () => res(i);
+      i.src = URL.createObjectURL(f);
+    });
+    const w = tw || img.width;
+    const h = th || img.height;
+    canvas.width = w; canvas.height = h;
+    ctx.clearRect(0,0,w,h);
+    ctx.drawImage(img, 0,0,w,h);
+    const blob = await new Promise(res => canvas.toBlob(res, mime, quality));
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = f.name.replace(/\.[^.]+$/, '') + '.' + ext;
+    a.click();
+    await new Promise(r => setTimeout(r, 200));
+  }
+  toast(`${imgFiles.length} imagem(ns) convertida(s)!`, '🖼');
+}
+
+// Drag & drop imagens
+const imgDrop = document.getElementById('img-drop');
+imgDrop.addEventListener('dragover', e => { e.preventDefault(); imgDrop.classList.add('drag-over'); });
+imgDrop.addEventListener('dragleave', () => imgDrop.classList.remove('drag-over'));
+imgDrop.addEventListener('drop', e => {
+  e.preventDefault(); imgDrop.classList.remove('drag-over');
+  imgAdd(e.dataTransfer.files);
+});
+
+// ══ PDF ══════════════════════════════════════════════════
+let pdfFiles = [];
+
+function pdfAdd(files) {
+  for (const f of files) {
+    if (f.type !== 'application/pdf') continue;
+    pdfFiles.push(f);
+  }
+  pdfRender();
+}
+
+function pdfRender() {
+  const list = document.getElementById('pdf-list');
+  list.innerHTML = pdfFiles.map((f,i) => `
+    <div class="pdf-file-item">
+      <span class="pdf-file-icon">📄</span>
+      <span class="pdf-file-name">${f.name}</span>
+      <span class="pdf-file-size">${(f.size/1024).toFixed(0)} KB</span>
+      <button class="btn btn-ghost" style="padding:4px 10px;font-size:11px" onclick="pdfRemove(${i})">✕</button>
+    </div>`).join('');
+  document.getElementById('pdf-merge-btn').disabled = pdfFiles.length < 2;
+}
+
+function pdfRemove(i) { pdfFiles.splice(i,1); pdfRender(); }
+function pdfClear() { pdfFiles = []; pdfRender(); document.getElementById('pdf-result').style.display='none'; }
+
+async function pdfMerge() {
+  if (pdfFiles.length < 2) return;
+  const btn = document.getElementById('pdf-merge-btn');
+  btn.textContent = '⏳ A unir...'; btn.disabled = true;
+  document.getElementById('pdf-error').style.display = 'none';
+  try {
+    const form = new FormData();
+    pdfFiles.forEach(f => form.append('files', f));
+    const r = await fetch('/api/pdf/merge', {method:'POST', body:form});
+    if (!r.ok) {
+      const d = await r.json();
+      document.getElementById('pdf-error').textContent = '⚠ ' + (d.error||'Erro');
+      document.getElementById('pdf-error').style.display = 'block';
+      return;
+    }
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    document.getElementById('pdf-dl-link').href = url;
+    document.getElementById('pdf-dl-link').download = 'merged.pdf';
+    document.getElementById('pdf-result').style.display = 'block';
+    toast('PDFs unidos!', '📄');
+  } catch(e) {
+    document.getElementById('pdf-error').textContent = '⚠ Erro: '+e.message;
+    document.getElementById('pdf-error').style.display = 'block';
+  } finally { btn.textContent = '📎 Juntar PDFs'; btn.disabled = false; }
+}
+
+const pdfDrop = document.getElementById('pdf-drop');
+pdfDrop.addEventListener('dragover', e => { e.preventDefault(); pdfDrop.classList.add('drag-over'); });
+pdfDrop.addEventListener('dragleave', () => pdfDrop.classList.remove('drag-over'));
+pdfDrop.addEventListener('drop', e => { e.preventDefault(); pdfDrop.classList.remove('drag-over'); pdfAdd(e.dataTransfer.files); });
+
+// ══ PASSWORDS ════════════════════════════════════════════
+function pwCharset() {
+  let c = '';
+  if (document.getElementById('pw-upper').checked) c += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  if (document.getElementById('pw-lower').checked) c += 'abcdefghijklmnopqrstuvwxyz';
+  if (document.getElementById('pw-nums').checked)  c += '0123456789';
+  if (document.getElementById('pw-sym').checked)   c += '!@#$%^&*()-_=+[]{}|;:,.<>?';
+  if (document.getElementById('pw-noambig').checked) c = c.replace(/[0O1lI]/g,'');
+  return c;
+}
+
+function pwMake(len, charset) {
+  if (!charset) return '';
+  const arr = new Uint32Array(len);
+  crypto.getRandomValues(arr);
+  return Array.from(arr).map(x => charset[x % charset.length]).join('');
+}
+
+function pwStrength(pw, charset) {
+  const entropy = pw.length * Math.log2(charset.length || 1);
+  let label, color, pct;
+  if (entropy < 40)      { label='Fraca';    color='#ff4757'; pct=20; }
+  else if (entropy < 60) { label='Razoável'; color=var_gold;  pct=50; }
+  else if (entropy < 80) { label='Boa';      color='#2ddc8e'; pct=75; }
+  else                   { label='Excelente';color='#00d4ff'; pct=100; }
+  document.getElementById('pw-strength-bar').style.cssText = `width:${pct}%;background:${color}`;
+  document.getElementById('pw-strength-label').textContent = label;
+  document.getElementById('pw-strength-label').style.color = color;
+  document.getElementById('pw-entropy').textContent = `${entropy.toFixed(0)} bits`;
+}
+const var_gold = '#f5c542';
+
+function pwGen() {
+  const len = parseInt(document.getElementById('pw-len').value);
+  document.getElementById('pw-len-val').textContent = len;
+  const count = parseInt(document.getElementById('pw-count').value);
+  document.getElementById('pw-count-val').textContent = count;
+  const charset = pwCharset();
+  if (!charset) { document.getElementById('pw-text').textContent = 'Seleciona pelo menos um tipo'; return; }
+  const pw = pwMake(len, charset);
+  document.getElementById('pw-text').textContent = pw;
+  pwStrength(pw, charset);
+  document.getElementById('pw-multi').style.display = 'none';
+}
+
+function pwGenMulti() {
+  const len   = parseInt(document.getElementById('pw-len').value);
+  const count = parseInt(document.getElementById('pw-count').value);
+  document.getElementById('pw-count-val').textContent = count;
+  document.getElementById('pw-len-val').textContent = len;
+  const charset = pwCharset();
+  if (!charset) return;
+  const pws = Array.from({length:count}, () => pwMake(len, charset));
+  document.getElementById('pw-text').textContent = pws[0];
+  pwStrength(pws[0], charset);
+  if (count > 1) {
+    document.getElementById('pw-multi').style.display = 'block';
+    document.getElementById('pw-multi').innerHTML = pws.map((p,i) =>
+      `<div style="cursor:pointer;padding:4px 0;border-bottom:1px solid var(--border)" onclick="copyText('${p}','Password ${i+1} copiada!')">${p}</div>`
+    ).join('');
+  } else {
+    document.getElementById('pw-multi').style.display = 'none';
+  }
+}
+
+function pwCopy() {
+  const pw = document.getElementById('pw-text').textContent;
+  if (pw && pw !== 'Carrega em Gerar') copyText(pw, 'Password copiada!');
+}
+
+// Gera uma ao abrir
+pwGen();
+
+// ══ READER (Readability.js) ═══════════════════════════════
+let readerFontSz = 18;
+let readerDark = false;
+
+const READER_FALLBACKS = [
+  { name: 'Archive.is',      icon: '🗂', fn: u => `https://archive.is/${encodeURIComponent(u)}` },
+  { name: 'Archive.li',      icon: '🗂', fn: u => `https://archive.li/${encodeURIComponent(u)}` },
+  { name: 'Archive.fo',      icon: '🗂', fn: u => `https://archive.fo/${encodeURIComponent(u)}` },
+  { name: 'Wayback Machine', icon: '⏪', fn: u => `https://web.archive.org/web/*/${u}` },
+  { name: 'Outline.com',     icon: '📄', fn: u => `https://outline.com/${encodeURIComponent(u)}` },
+  { name: 'Cache Google',    icon: '🔍', fn: u => `https://webcache.googleusercontent.com/search?q=cache:${encodeURIComponent(u)}` },
+];
+
+async function readerFetch() {
+  const url = document.getElementById('reader-url').value.trim();
+  if (!url || !url.startsWith('http')) { toast('Cola um URL válido', '⚠️'); return; }
+
+  // UI: loading
+  document.getElementById('reader-article-card').style.display = 'none';
+  document.getElementById('reader-error').style.display = 'none';
+  document.getElementById('reader-loading').style.display = 'block';
+  document.getElementById('reader-btn').disabled = true;
+
+  try {
+    const r = await fetch('/api/reader/extract', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({url})
+    });
+    const d = await r.json();
+
+    document.getElementById('reader-loading').style.display = 'none';
+    document.getElementById('reader-btn').disabled = false;
+
+    if (d.error || !d.content) {
+      showReaderError(d.error || 'Não foi possível extrair conteúdo.', url);
+      return;
+    }
+
+    // Conteúdo muito curto = provavelmente paywall
+    if (d.length < 400) {
+      showReaderThinContent(d, url);
+      return;
+    }
+
+    renderArticle(d, url);
+
+  } catch(e) {
+    document.getElementById('reader-loading').style.display = 'none';
+    document.getElementById('reader-btn').disabled = false;
+    showReaderError('Servidor não disponível: ' + e.message, url);
+  }
+}
+
+function renderArticle(d, url) {
+  document.getElementById('reader-art-title').textContent = d.title || 'Sem título';
+  document.getElementById('reader-art-meta').textContent =
+    [d.byline, d.site_name, d.length ? `~${Math.ceil(d.length/200)} min leitura` : ''].filter(Boolean).join(' · ');
+  document.getElementById('reader-orig-link').href = url;
+
+  const art = document.getElementById('reader-article');
+  art.innerHTML = `<style>
+    #reader-article { font-size:${readerFontSz}px; line-height:1.85;
+      color:${readerDark?'#dde1f0':'#1a1a1a'};
+      background:${readerDark?'#0d0f17':'#fafaf8'}; }
+    #reader-article h1,#reader-article h2,#reader-article h3 {
+      font-family:'Syne',sans-serif; margin:1.4em 0 0.6em; line-height:1.3; }
+    #reader-article p { margin:0 0 1.2em; }
+    #reader-article img { max-width:100%; height:auto; border-radius:8px; margin:1em 0; }
+    #reader-article a { color:#6c63ff; }
+    #reader-article blockquote { border-left:3px solid #6c63ff; margin:1em 0;
+      padding:0.5em 1em; color:${readerDark?'#8890aa':'#555'}; font-style:italic; }
+    #reader-article figure { margin:1.2em 0; }
+    #reader-article figcaption { font-size:0.8em; color:${readerDark?'#6b7090':'#888'}; margin-top:4px; }
+  </style>` + d.content;
+
+  art.style.background = readerDark ? '#0d0f17' : '#fafaf8';
+
+  document.getElementById('reader-article-card').style.display = 'block';
+  document.getElementById('reader-article-card').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function showReaderThinContent(d, url) {
+  // Mostra o pouco que foi extraído + alerta + Archive.today em destaque
+  renderArticle(d, url);
+
+  // Injeta aviso no topo do artigo
+  const art = document.getElementById('reader-article');
+  const archiveUrl = `/api/reader/archive?url=${encodeURIComponent(url)}`;
+  const warning = document.createElement('div');
+  warning.style.cssText = `
+    background: rgba(245,197,66,0.1); border: 1px solid rgba(245,197,66,0.35);
+    border-radius: 10px; padding: 14px 18px; margin-bottom: 24px;
+    font-family: 'DM Mono', monospace; font-size: 13px;
+  `;
+  warning.innerHTML = `
+    <div style="color:#f5c542;font-weight:700;margin-bottom:6px">⚠ Artigo provavelmente bloqueado por paywall</div>
+    <div style="color:#8890aa;margin-bottom:12px">Só foi possível extrair ${d.length} caracteres — o conteúdo completo pode estar disponível no arquivo público.</div>
+    <a href="${archiveUrl}" target="_blank" rel="noopener"
+      style="display:inline-flex;align-items:center;gap:8px;background:#f5c542;color:#000;
+             padding:8px 18px;border-radius:8px;text-decoration:none;font-weight:700;font-size:13px">
+      🗂 Ler via Arquivo (sem bloqueio)
+    </a>
+    <a href="${url}" target="_blank" rel="noopener"
+      style="display:inline-flex;align-items:center;gap:8px;margin-left:10px;
+             color:#6c63ff;text-decoration:none;font-size:12px">
+      ↗ Original
+    </a>
+  `;
+  art.insertBefore(warning, art.firstChild);
+}
+
+function showReaderError(msg, url) {
+  document.getElementById('reader-error-msg').textContent = msg;
+  const btns = document.getElementById('reader-fallback-btns');
+  btns.innerHTML = READER_FALLBACKS.map(f => `
+    <a class="reader-btn" href="${f.fn(url)}" target="_blank" rel="noopener">
+      <span class="reader-btn-icon">${f.icon}</span>
+      <div class="reader-btn-info">
+        <div class="reader-btn-name">${f.name}</div>
+      </div>
+      <span class="reader-btn-arrow">↗</span>
+    </a>`).join('');
+  document.getElementById('reader-error').style.display = 'block';
+}
+
+function readerFontSize(delta) {
+  readerFontSz = Math.max(12, Math.min(28, readerFontSz + delta * 2));
+  document.getElementById('reader-article').style.fontSize = readerFontSz + 'px';
+}
+
+function readerToggleTheme() {
+  readerDark = !readerDark;
+  const art = document.getElementById('reader-article');
+  art.style.background = readerDark ? '#0d0f17' : '#fafaf8';
+  art.style.color = readerDark ? '#dde1f0' : '#1a1a1a';
+}
+
+function readerClose() {
+  document.getElementById('reader-article-card').style.display = 'none';
+  document.getElementById('reader-error').style.display = 'none';
+}
+
+document.getElementById('reader-url').addEventListener('keydown', e => {
+  if (e.key === 'Enter') readerFetch();
+});
+
+function portOut(el, msg, type='info') {
+  el.style.display='block';
+  el.innerHTML += `<span class="${type}">${msg}</span>\n`;
+  el.scrollTop = el.scrollHeight;
+}
+
+function portCheck() {
+  const p = document.getElementById('port-num').value;
+  if (!p) return;
+  const el = document.getElementById('port-out');
+  el.innerHTML=''; el.style.display='block';
+  portOut(el, `Comando para verificar porta ${p}:`, 'info');
+  portOut(el, `netstat -ano | findstr :${p}`, '');
+  copyText(`netstat -ano | findstr :${p}`, `Comando copiado! Cola no CMD Admin`);
+}
+
+function portKill() {
+  const p = document.getElementById('port-num').value;
+  if (!p) return;
+  const el = document.getElementById('port-out');
+  el.innerHTML=''; el.style.display='block';
+  const cmd = `for /f "tokens=5" %a in ('netstat -ano ^| findstr :${p}') do taskkill /PID %a /F`;
+  portOut(el, `Comando para libertar porta ${p}:`, 'warn');
+  portOut(el, cmd, '');
+  copyText(cmd, `Comando copiado! Cola no CMD Admin`);
+}
+
+function portCmd(cmd, label) {
+  const el = document.getElementById('port-cmd-out');
+  el.innerHTML=''; el.style.display='block';
+  portOut(el, `▶ ${label}:`, 'info');
+  portOut(el, cmd, '');
+  copyText(cmd, `"${label}" copiado!`);
+}
+
+function portFirewall() {
+  const port = document.getElementById('fw-port').value || document.getElementById('port-num').value;
+  if (!port) { toast('Insere o número da porta primeiro','⚠️'); return; }
+  const proto = 'TCP';
+  const cmd = `netsh advfirewall firewall add rule name="Porta${port}" protocol=${proto} dir=in localport=${port} action=allow`;
+  const el = document.getElementById('fw-out');
+  el.innerHTML=''; el.style.display='block';
+  portOut(el, `Abrir porta ${port} no Firewall:`, 'ok');
+  portOut(el, cmd, '');
+  copyText(cmd, `Regra Firewall copiada!`);
+}
+
+function fwAllow() {
+  const port  = document.getElementById('fw-port').value;
+  const proto = document.getElementById('fw-proto').value;
+  const name  = document.getElementById('fw-name').value || `Porta${port}`;
+  if (!port) { toast('Insere a porta','⚠️'); return; }
+  const cmd = `netsh advfirewall firewall add rule name="${name}" protocol=${proto} dir=in localport=${port} action=allow`;
+  const el = document.getElementById('fw-out');
+  el.innerHTML=''; el.style.display='block';
+  portOut(el, `✅ Abrir porta ${port}/${proto}:`, 'ok');
+  portOut(el, cmd, '');
+  copyText(cmd, `Regra "Abrir" copiada!`);
+}
+
+function fwBlock() {
+  const port  = document.getElementById('fw-port').value;
+  const proto = document.getElementById('fw-proto').value;
+  if (!port) { toast('Insere a porta','⚠️'); return; }
+  const cmd = `netsh advfirewall firewall add rule name="Bloquear${port}" protocol=${proto} dir=in localport=${port} action=block`;
+  const el = document.getElementById('fw-out');
+  el.innerHTML=''; el.style.display='block';
+  portOut(el, `❌ Bloquear porta ${port}/${proto}:`, 'err');
+  portOut(el, cmd, '');
+  copyText(cmd, `Regra "Bloquear" copiada!`);
+}
+</script>
+</body>
+</html>
