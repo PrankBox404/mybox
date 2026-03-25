@@ -30,6 +30,7 @@ import subprocess
 import importlib
 import hashlib
 import secrets
+import tempfile
 from pathlib import Path
 from functools import wraps
 from flask import (Flask, request, jsonify, send_file,
@@ -40,7 +41,16 @@ import yt_dlp
 app = Flask(__name__)
 
 # ─── Config ───────────────────────────────────────────────────────────────────
-DOWNLOAD_DIR = Path(os.environ.get("DOWNLOAD_DIR", "./downloads"))
+# Usa RAM (/dev/shm) no Linux — ficheiros nunca ficam no disco
+# Fallback para pasta temporária no Windows ou se /dev/shm não existir
+_shm = Path("/dev/shm")
+if os.environ.get("DOWNLOAD_DIR"):
+    DOWNLOAD_DIR = Path(os.environ["DOWNLOAD_DIR"])
+elif _shm.exists() and _shm.is_dir():
+    DOWNLOAD_DIR = _shm / "mybox_dl"
+else:
+    DOWNLOAD_DIR = Path(tempfile.gettempdir()) / "mybox_dl"
+
 DOWNLOAD_DIR.mkdir(exist_ok=True)
 
 DATA_DIR = Path(os.environ.get("DATA_DIR", "./data"))
@@ -651,9 +661,37 @@ def serve_file(job_id):
         return jsonify({"error": "Ficheiro não disponível"}), 404
     filepath = DOWNLOAD_DIR / job["filename"]
     if not filepath.exists():
-        return jsonify({"error": "Ficheiro não encontrado no disco"}), 404
-    return send_file(str(filepath), as_attachment=True,
-                     download_name=job["filename"].split("_", 1)[-1])
+        return jsonify({"error": "Ficheiro não encontrado"}), 404
+
+    download_name = job["filename"].split("_", 1)[-1]
+
+    # Lê o ficheiro para memória e apaga do disco/RAM imediatamente
+    try:
+        data = filepath.read_bytes()
+        filepath.unlink()          # apaga logo — nunca fica guardado
+        jobs.pop(job_id, None)     # limpa o job também
+    except Exception:
+        data = filepath.read_bytes()
+
+    # Determina o mimetype
+    ext = filepath.suffix.lower()
+    mimetypes_map = {
+        ".mp4": "video/mp4", ".mp3": "audio/mpeg",
+        ".m4a": "audio/mp4", ".webm": "video/webm",
+        ".mkv": "video/x-matroska", ".avi": "video/x-msvideo",
+    }
+    mime = mimetypes_map.get(ext, "application/octet-stream")
+
+    # Stream da RAM para o browser
+    import io
+    return Response(
+        io.BytesIO(data),
+        mimetype=mime,
+        headers={
+            "Content-Disposition": f'attachment; filename="{download_name}"',
+            "Content-Length": str(len(data)),
+        }
+    )
 
 
 # ─── API: Limpar ficheiros antigos ────────────────────────────────────────────
@@ -776,94 +814,123 @@ def reader_archive():
     if not url:
         return "URL em falta", 400
 
-    import urllib.request, ssl, gzip, re
+    import urllib.request, urllib.parse, ssl, gzip, re
 
-    # Tenta cada mirror do archive até um funcionar
     mirrors = [
+        "https://archive.ph",
         "https://archive.is",
         "https://archive.li",
         "https://archive.fo",
         "https://archive.vn",
-        "https://archive.ph",
     ]
 
-    headers = {
+    headers_get = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
         "Accept": "text/html,application/xhtml+xml,*/*;q=0.8",
         "Accept-Language": "pt-PT,pt;q=0.9,en;q=0.7",
         "Accept-Encoding": "gzip, deflate",
         "Referer": "https://www.google.com/",
+        "Cache-Control": "no-cache",
     }
 
     ctx = ssl.create_default_context()
     ctx.check_hostname = False
     ctx.verify_mode = ssl.CERT_NONE
 
+    def fetch_html(req_url, post_data=None):
+        req = urllib.request.Request(req_url, data=post_data, headers=headers_get)
+        with urllib.request.urlopen(req, context=ctx, timeout=15) as resp:
+            raw = resp.read()
+            enc = resp.headers.get("Content-Encoding", "")
+            final = resp.geturl()
+        html = gzip.decompress(raw).decode("utf-8", errors="replace") if enc == "gzip" else raw.decode("utf-8", errors="replace")
+        return html, final
+
+    def is_valid_archive(html):
+        # Rejeita página nginx padrão ou páginas vazias
+        if "Welcome to nginx" in html:
+            return False
+        if len(html) < 2000:
+            return False
+        # Verifica se tem conteúdo real do archive
+        if "archive" not in html.lower() and "TEXT-BLOCK" not in html:
+            return False
+        return True
+
+    def inject_reader_css(html):
+        css = """<style>
+          #HEADER, #TOOLBOX, .TEXT-BLOCK > div:first-child,
+          #wm-ipp-base, .wb_highlight_all, .archive-notice { display:none!important; }
+          body { max-width:820px!important; margin:0 auto!important;
+            font-family:Georgia,serif!important; font-size:18px!important;
+            line-height:1.85!important; padding:24px!important;
+            background:#fafaf8!important; color:#1a1a1a!important; }
+          img { max-width:100%!important; height:auto!important; }
+          a { color:#333!important; }
+        </style>"""
+        if "<head>" in html:
+            return html.replace("<head>", "<head>" + css, 1)
+        return css + html
+
     last_error = ""
+
     for mirror in mirrors:
         try:
-            archive_url = f"{mirror}/{url}"
-            req = urllib.request.Request(archive_url, headers=headers)
-            with urllib.request.urlopen(req, context=ctx, timeout=12) as resp:
-                raw = resp.read()
-                enc = resp.headers.get("Content-Encoding", "")
-                final_url = resp.geturl()
+            # 1. Tenta aceder diretamente ao URL arquivado
+            direct = f"{mirror}/{url}"
+            html, final_url = fetch_html(direct)
 
-            html = gzip.decompress(raw).decode("utf-8", errors="replace") if enc == "gzip" else raw.decode("utf-8", errors="replace")
+            if is_valid_archive(html):
+                return inject_reader_css(html), 200, {"Content-Type": "text/html; charset=utf-8"}
 
-            # Injeta CSS de leitura limpa e remove barra do archive
-            clean_css = """<style>
-              #HEADER, .TEXT-BLOCK > div:first-child, #TOOLBOX,
-              #wm-ipp-base, .wb_highlight_all { display:none!important; }
-              body { max-width:820px!important; margin:0 auto!important;
-                font-family:Georgia,serif!important; font-size:18px!important;
-                line-height:1.85!important; padding:24px!important;
-                background:#fafaf8!important; color:#1a1a1a!important; }
-              img { max-width:100%!important; height:auto!important; }
-            </style>"""
+            # 2. Se não funcionou, faz POST para pesquisar o arquivo
+            post_data = urllib.parse.urlencode({"url": url}).encode()
+            headers_get["Content-Type"] = "application/x-www-form-urlencoded"
+            html2, final_url2 = fetch_html(mirror + "/submit/", post_data)
 
-            if "<head>" in html:
-                html = html.replace("<head>", "<head>" + clean_css, 1)
+            if is_valid_archive(html2):
+                return inject_reader_css(html2), 200, {"Content-Type": "text/html; charset=utf-8"}
 
-            return html, 200, {
-                "Content-Type": "text/html; charset=utf-8",
-                "X-Archive-Mirror": mirror,
-            }
+            # 3. Tenta o URL final após redirect
+            if final_url2 != mirror + "/submit/" and "archive" in final_url2:
+                html3, _ = fetch_html(final_url2)
+                if is_valid_archive(html3):
+                    return inject_reader_css(html3), 200, {"Content-Type": "text/html; charset=utf-8"}
+
         except Exception as e:
             last_error = str(e)
             continue
 
-    # Nenhum mirror funcionou — tenta Wayback Machine como fallback
+    # Fallback: Wayback Machine
     try:
         wayback_api = f"http://archive.org/wayback/available?url={url}"
-        req2 = urllib.request.Request(wayback_api, headers=headers)
+        req2 = urllib.request.Request(wayback_api, headers=headers_get)
         with urllib.request.urlopen(req2, context=ctx, timeout=10) as resp2:
             import json as _json
             data = _json.loads(resp2.read())
             snapshot = data.get("archived_snapshots", {}).get("closest", {})
             if snapshot.get("available") and snapshot.get("url"):
-                # Redireciona para o snapshot do Wayback
-                return redirect(snapshot["url"])
+                html_wb, _ = fetch_html(snapshot["url"])
+                return inject_reader_css(html_wb), 200, {"Content-Type": "text/html; charset=utf-8"}
     except Exception:
         pass
 
-    # Devolve página de erro
     return f"""<!DOCTYPE html><html><body style="font-family:monospace;padding:30px;background:#0d0f17;color:#dde1f0">
-        <h2 style="color:#f5c542">⚠ Archive inacessível localmente</h2>
+        <h2 style="color:#f5c542">⚠ Artigo não encontrado no arquivo</h2>
         <p style="color:#8890aa;margin:12px 0">
-          O Archive.today está bloqueado pelo teu ISP.<br>
-          Quando a app estiver num servidor online (Render/Railway) vai funcionar automaticamente.
+          Este artigo ainda não foi arquivado, ou o archive está temporariamente indisponível.<br>
+          Último erro: {last_error}
         </p>
-        <p style="margin-top:16px;color:#8890aa">Alternativas agora:</p>
-        <div style="margin-top:12px;display:flex;flex-direction:column;gap:10px">
-          <a href="https://web.archive.org/web/*/{url}" target="_blank"
+        <div style="margin-top:16px;display:flex;flex-direction:column;gap:10px">
+          <a href="https://archive.ph/{url}" target="_blank"
             style="color:#fff;background:#6c63ff;padding:10px 18px;border-radius:8px;text-decoration:none;display:inline-block">
+            🗂 Tentar archive.ph diretamente
+          </a>
+          <a href="https://web.archive.org/web/*/{url}" target="_blank"
+            style="color:#fff;background:#444;padding:10px 18px;border-radius:8px;text-decoration:none;display:inline-block">
             ⏪ Tentar Wayback Machine
           </a>
-          <a href="{url}" target="_blank"
-            style="color:#6c63ff;text-decoration:none;font-size:13px">
-            ↗ Abrir original
-          </a>
+          <a href="{url}" target="_blank" style="color:#6c63ff;font-size:13px">↗ Abrir original</a>
         </div>
     </body></html>""", 200, {"Content-Type": "text/html; charset=utf-8"}
 
